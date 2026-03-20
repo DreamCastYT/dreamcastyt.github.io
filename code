@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jackcraft</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Courier New', Courier, monospace; background: #000; }
+        canvas { display: block; }
+        
+        /* Main Menu Styling */
+        #menu {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 100;
+        }
+
+        #logo-container {
+            width: 80%;
+            max-width: 800px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #logo {
+            width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+        }
+
+        .menu-btn {
+            background: #444;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 12px 0;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 8px;
+            width: 320px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .menu-btn:hover {
+            background: #666;
+            outline: 2px solid #fff;
+        }
+
+        /* In-game UI */
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            pointer-events: none;
+            font-size: 14px;
+            text-shadow: 1px 1px 1px #000;
+            display: none;
+        }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 14px;
+            height: 14px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+        }
+        #crosshair::before, #crosshair::after {
+            content: '';
+            position: absolute;
+            background: #fff;
+        }
+        #crosshair::before { top: 6px; left: 0; width: 14px; height: 2px; }
+        #crosshair::after { top: 0; left: 6px; width: 2px; height: 14px; }
+
+        #inventory {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #fff;
+        }
+        .slot {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+            opacity: 0.5;
+        }
+        .slot.active {
+            opacity: 1;
+            outline: 3px solid #fff;
+            z-index: 10;
+        }
+
+        /* Hidden input for file loading */
+        #fileInput { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="menu">
+    <div id="logo-container">
+        <img id="logo" src="jcraft 2.png" alt="JACKCRAFT">
+    </div>
+    <div class="menu-btn" onclick="startGame()">Start Game</div>
+    <div class="menu-btn" onclick="saveWorld()">Save World to PC</div>
+    <div class="menu-btn" onclick="document.getElementById('fileInput').click()">Load World from PC</div>
+    <div class="menu-btn" onclick="resetWorld()">Reset World</div>
+</div>
+
+<input type="file" id="fileInput" accept=".json" onchange="loadWorld(event)">
+
+<div id="ui">
+    WASD: MOVE<br>
+    SPACE: JUMP<br>
+    L-CLICK: PLACE<br>
+    R-CLICK: REMOVE<br>
+    SCROLL / 1-3: SELECT BLOCK<br>
+    ESC: MAIN MENU
+</div>
+
+<div id="crosshair"></div>
+
+<div id="inventory">
+    <div id="slot1" class="slot active" style="background: #345e28;">1</div>
+    <div id="slot2" class="slot" style="background: #5d4037;">2</div>
+    <div id="slot3" class="slot" style="background: #616161;">3</div>
+</div>
+
+<script>
+    const BLOCK_SIZE = 1;
+    const GRID_SIZE = 60;
+    const PLAYER_HEIGHT = 1.7;
+    const PLAYER_RADIUS = 0.3;
+    const MATERIALS = [
+        { name: 'Grass', color: 0x345e28 },
+        { name: 'Dirt', color: 0x5d4037 },
+        { name: 'Stone', color: 0x616161 }
+    ];
+    let selectedMaterial = 0;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x75bbfd);
+    scene.fog = new THREE.Fog(0x75bbfd, 30, 80);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.rotation.order = 'YXZ';
+    const renderer = new THREE.WebGLRenderer({ antialias: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    dirLight.position.set(20, 40, 20);
+    scene.add(dirLight);
+
+    const velocity = new THREE.Vector3();
+    const keys = {};
+    let isLocked = false;
+    let inGame = false;
+    let onGround = false;
+
+    const blocks = [];
+    const geometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+
+    function createFloor() {
+        for (let x = -GRID_SIZE/2; x < GRID_SIZE/2; x++) {
+            for (let z = -GRID_SIZE/2; z < GRID_SIZE/2; z++) {
+                addBlock(x, -1, z, 0);
+            }
+        }
+    }
+
+    function addBlock(x, y, z, matIndex) {
+        const material = new THREE.MeshLambertMaterial({ color: MATERIALS[matIndex].color });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.set(x + 0.5, y + 0.5, z + 0.5);
+        cube.userData.matIndex = matIndex;
+        scene.add(cube);
+        blocks.push(cube);
+    }
+
+    createFloor();
+
+    // --- Save and Load Logic ---
+    function saveWorld() {
+        const worldData = blocks.map(b => ({
+            x: Math.floor(b.position.x - 0.5),
+            y: Math.floor(b.position.y - 0.5),
+            z: Math.floor(b.position.z - 0.5),
+            m: b.userData.matIndex
+        }));
+
+        const blob = new Blob([JSON.stringify(worldData)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'jackcraft_world.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function loadWorld(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                while(blocks.length > 0) {
+                    const b = blocks.pop();
+                    scene.remove(b);
+                }
+                data.forEach(item => {
+                    addBlock(item.x, item.y, item.z, item.m);
+                });
+                camera.position.set(0, 5, 8);
+                event.target.value = '';
+                
+                setTimeout(() => {
+                    startGame();
+                }, 100);
+            } catch (err) {
+                console.error("Failed to load world:", err);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function resetWorld() {
+        if(confirm("Are you sure? This will delete everything!")) {
+            window.location.reload();
+        }
+    }
+
+    function startGame() {
+        try {
+            renderer.domElement.requestPointerLock();
+        } catch (e) {
+            console.warn("Pointer lock failed, retrying...", e);
+        }
+    }
+
+    document.addEventListener('pointerlockchange', () => {
+        isLocked = document.pointerLockElement === renderer.domElement;
+        const menu = document.getElementById('menu');
+        const ui = document.getElementById('ui');
+        const crosshair = document.getElementById('crosshair');
+        const inventory = document.getElementById('inventory');
+
+        if (isLocked) {
+            menu.style.display = 'none';
+            ui.style.display = 'block';
+            crosshair.style.display = 'block';
+            inventory.style.display = 'flex';
+            inGame = true;
+        } else {
+            menu.style.display = 'flex';
+            ui.style.display = 'none';
+            crosshair.style.display = 'none';
+            inventory.style.display = 'none';
+            inGame = false;
+        }
+    });
+
+    document.addEventListener('keydown', (e) => { keys[e.code] = true; });
+    document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+    
+    // Switch block with number keys
+    document.addEventListener('keydown', (e) => {
+        if (!inGame) return;
+        if(e.key === '1') switchMaterial(0);
+        if(e.key === '2') switchMaterial(1);
+        if(e.key === '3') switchMaterial(2);
+    });
+
+    // Switch block with scroll wheel
+    window.addEventListener('wheel', (e) => {
+        if (!inGame) return;
+        
+        // e.deltaY > 0 is scroll down, < 0 is scroll up
+        if (e.deltaY > 0) {
+            selectedMaterial = (selectedMaterial + 1) % MATERIALS.length;
+        } else {
+            selectedMaterial = (selectedMaterial - 1 + MATERIALS.length) % MATERIALS.length;
+        }
+        switchMaterial(selectedMaterial);
+    });
+
+    function switchMaterial(index) {
+        selectedMaterial = index;
+        document.querySelectorAll('.slot').forEach(s => s.classList.remove('active'));
+        document.getElementById(`slot${index+1}`).classList.add('active');
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isLocked) return;
+        camera.rotation.y -= e.movementX * 0.002;
+        camera.rotation.x -= e.movementY * 0.002;
+        camera.rotation.x = Math.max(-1.5, Math.min(1.5, camera.rotation.x));
+    });
+
+    const raycaster = new THREE.Raycaster();
+    const mouseCenter = new THREE.Vector2(0, 0);
+
+    window.addEventListener('mousedown', (e) => {
+        if (!isLocked) return;
+        
+        raycaster.setFromCamera(mouseCenter, camera);
+        const intersects = raycaster.intersectObjects(blocks);
+
+        if (intersects.length > 0) {
+            const intersect = intersects[0];
+            
+            if (e.button === 0) { // Place
+                const pos = intersect.object.position.clone().add(intersect.face.normal);
+                if (pos.distanceTo(camera.position) > 0.8) {
+                    addBlock(Math.floor(pos.x - 0.5), Math.floor(pos.y - 0.5), Math.floor(pos.z - 0.5), selectedMaterial);
+                }
+            } else if (e.button === 2) { // Remove
+                if (intersect.object.position.y > 0) {
+                    scene.remove(intersect.object);
+                    const index = blocks.indexOf(intersect.object);
+                    if (index > -1) blocks.splice(index, 1);
+                }
+            }
+        }
+    });
+
+    window.addEventListener('contextmenu', e => e.preventDefault());
+
+    camera.position.set(0, 2, 8);
+
+    function checkCollisions(pos) {
+        for (let i = 0; i < blocks.length; i++) {
+            const b = blocks[i];
+            const bx = b.position.x - 0.5;
+            const by = b.position.y - 0.5;
+            const bz = b.position.z - 0.5;
+
+            const distSq = (pos.x - b.position.x)**2 + (pos.z - b.position.z)**2;
+            if (distSq > 16) continue;
+
+            if (pos.x + PLAYER_RADIUS > bx && pos.x - PLAYER_RADIUS < bx + 1 &&
+                pos.z + PLAYER_RADIUS > bz && pos.z - PLAYER_RADIUS < bz + 1 &&
+                pos.y > by && pos.y - PLAYER_HEIGHT < by + 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    let prevTime = performance.now();
+    
+    function animate() {
+        requestAnimationFrame(animate);
+        const time = performance.now();
+        const delta = Math.min((time - prevTime) / 1000, 0.05);
+
+        if (isLocked) {
+            velocity.x -= velocity.x * 10.0 * delta;
+            velocity.z -= velocity.z * 10.0 * delta;
+            velocity.y -= 30.0 * delta;
+
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            forward.y = 0;
+            forward.normalize();
+            
+            const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+            right.y = 0;
+            right.normalize();
+
+            const moveDir = new THREE.Vector3(0, 0, 0);
+            if (keys['KeyW']) moveDir.add(forward);
+            if (keys['KeyS']) moveDir.sub(forward);
+            if (keys['KeyA']) moveDir.sub(right);
+            if (keys['KeyD']) moveDir.add(right);
+            
+            if (moveDir.lengthSq() > 0) {
+                moveDir.normalize();
+                const speed = 50.0;
+                velocity.x += moveDir.x * speed * delta;
+                velocity.z += moveDir.z * speed * delta;
+            }
+
+            const oldX = camera.position.x;
+            const oldZ = camera.position.z;
+
+            camera.position.x += velocity.x * delta;
+            if (checkCollisions(camera.position)) camera.position.x = oldX;
+
+            camera.position.z += velocity.z * delta;
+            if (checkCollisions(camera.position)) camera.position.z = oldZ;
+
+            const oldY = camera.position.y;
+            camera.position.y += velocity.y * delta;
+            
+            if (checkCollisions(camera.position)) {
+                if (velocity.y < 0) onGround = true;
+                camera.position.y = oldY;
+                velocity.y = 0;
+            } else {
+                onGround = false;
+            }
+
+            if (onGround && keys['Space']) {
+                velocity.y = 11;
+                onGround = false;
+            }
+        } else {
+            camera.rotation.y += 0.001;
+        }
+
+        prevTime = time;
+        renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    window.onload = animate;
+</script>
+</body>
+</html>
