@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,10 +6,9 @@
     <title>Jackcraft</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Courier New', Courier, monospace; background: #000; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; }
         canvas { display: block; }
         
-        /* Main Menu Styling */
         #menu {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -17,14 +16,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.85);
             z-index: 100;
         }
 
         #logo-container {
             width: 80%;
             max-width: 800px;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             display: flex;
             justify-content: center;
         }
@@ -33,82 +32,119 @@
             width: 100%;
             height: auto;
             image-rendering: pixelated;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));
         }
 
         .menu-btn {
-            background: #444;
+            background: #333;
             color: #fff;
-            border: 2px solid #fff;
-            padding: 12px 0;
-            font-size: 18px;
+            border: 3px solid #666;
+            padding: 15px 0;
+            font-size: 20px;
             cursor: pointer;
-            margin: 8px;
-            width: 320px;
+            margin: 10px;
+            width: 350px;
             text-align: center;
             text-transform: uppercase;
+            font-weight: bold;
+            transition: all 0.2s;
         }
 
         .menu-btn:hover {
-            background: #666;
-            outline: 2px solid #fff;
+            background: #555;
+            border-color: #fff;
+            transform: scale(1.02);
         }
 
-        /* In-game UI */
         #ui {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 20px;
+            left: 20px;
             color: #fff;
             pointer-events: none;
-            font-size: 14px;
-            text-shadow: 1px 1px 1px #000;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px #000;
             display: none;
+            z-index: 10;
+            line-height: 1.5;
         }
 
         #crosshair {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 14px;
-            height: 14px;
+            width: 20px;
+            height: 20px;
             transform: translate(-50%, -50%);
             pointer-events: none;
             display: none;
+            z-index: 10;
         }
         #crosshair::before, #crosshair::after {
             content: '';
             position: absolute;
-            background: #fff;
+            background: rgba(255, 255, 255, 0.8);
         }
-        #crosshair::before { top: 6px; left: 0; width: 14px; height: 2px; }
-        #crosshair::after { top: 0; left: 6px; width: 2px; height: 14px; }
+        #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
+        #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
 
-        #inventory {
+        #inventory-container {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #block-name-label {
+            color: #fff;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px #000;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            background: rgba(0,0,0,0.7);
+            padding: 6px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        #inventory {
             display: none;
-            background: rgba(0,0,0,0.5);
-            border: 2px solid #fff;
+            background: rgba(0,0,0,0.7);
+            border: 3px solid #555;
+            pointer-events: auto;
+            padding: 6px;
+            gap: 8px;
+            border-radius: 4px;
         }
         .slot {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #fff;
-            font-size: 18px;
+            font-size: 20px;
             opacity: 0.5;
+            background-size: cover;
+            background-position: center;
+            image-rendering: pixelated;
+            border: 3px solid transparent;
+            font-weight: bold;
+            transition: all 0.1s;
         }
         .slot.active {
             opacity: 1;
-            outline: 3px solid #fff;
-            z-index: 10;
+            border-color: #fff;
+            background-color: rgba(255,255,255,0.15);
+            transform: translateY(-5px);
         }
 
-        /* Hidden input for file loading */
         #fileInput { display: none; }
     </style>
 </head>
@@ -116,60 +152,85 @@
 
 <div id="menu">
     <div id="logo-container">
-        <!-- Ensure this filename matches exactly what you upload to GitHub -->
         <img id="logo" src="jcraft 2.png" alt="JACKCRAFT">
     </div>
-    <div class="menu-btn" onclick="startGame()">Start Game</div>
-    <div class="menu-btn" onclick="saveWorld()">Save World to PC</div>
-    <div class="menu-btn" onclick="document.getElementById('fileInput').click()">Load World from PC</div>
+    <div class="menu-btn" onclick="startGame()">Play</div>
+    <div class="menu-btn" onclick="saveWorld()">Save Map</div>
+    <div class="menu-btn" onclick="document.getElementById('fileInput').click()">Load Map</div>
     <div class="menu-btn" onclick="resetWorld()">Reset World</div>
 </div>
 
 <input type="file" id="fileInput" accept=".json" onchange="loadWorld(event)">
 
 <div id="ui">
-    WASD: MOVE<br>
-    SPACE: JUMP<br>
-    L-CLICK: PLACE<br>
-    R-CLICK: REMOVE<br>
-    SCROLL / 1-3: SELECT BLOCK<br>
-    ESC: MAIN MENU
+    [WASD] Move &nbsp; [SPACE] Jump<br>
+    [L-CLICK] Place Block &nbsp; [R-CLICK] Destroy<br>
+    [SCROLL] or [1-6] Select Block<br>
+    [ESC] Pause/Menu
 </div>
 
 <div id="crosshair"></div>
 
-<div id="inventory">
-    <div id="slot1" class="slot active" style="background: #345e28;">1</div>
-    <div id="slot2" class="slot" style="background: #5d4037;">2</div>
-    <div id="slot3" class="slot" style="background: #616161;">3</div>
+<div id="inventory-container">
+    <div id="block-name-label">Grass</div>
+    <div id="inventory">
+        <div id="slot1" class="slot active" style="background-color: #345e28;">1</div>
+        <div id="slot2" class="slot" style="background-color: #5d4037;">2</div>
+        <div id="slot3" class="slot" style="background-color: #616161;">3</div>
+        <div id="slot4" class="slot" style="background-image: url('JackSucksAtLife.webp');">4</div>
+        <div id="slot5" class="slot" style="background-image: url('reddit-revivers-logo.png');">5</div>
+        <div id="slot6" class="slot" style="background-image: url('youtube-5357882_1280.webp');">6</div>
+    </div>
 </div>
 
 <script>
     const BLOCK_SIZE = 1;
-    const GRID_SIZE = 60;
-    const PLAYER_HEIGHT = 1.7;
+    const GRID_SIZE = 50; 
+    const DEPTH = 12;      // Even deeper world
     const PLAYER_RADIUS = 0.3;
+
+    let lockCooldown = false;
+    const loader = new THREE.TextureLoader();
+    
+    function loadPixelTexture(url) {
+        const t = loader.load(url);
+        t.magFilter = THREE.NearestFilter;
+        t.minFilter = THREE.NearestFilter;
+        return t;
+    }
+
+    const jackTexture = loadPixelTexture('JackSucksAtLife.webp');
+    const redditTexture = loadPixelTexture('reddit-revivers-logo.png');
+    const silverPlayTexture = loadPixelTexture('youtube-5357882_1280.webp');
+
     const MATERIALS = [
-        { name: 'Grass', color: 0x345e28 },
-        { name: 'Dirt', color: 0x5d4037 },
-        { name: 'Stone', color: 0x616161 }
+        { name: 'Grass', color: 0x345e28, type: 'basic' },
+        { name: 'Dirt', color: 0x5d4037, type: 'basic' },
+        { name: 'Stone', color: 0x616161, type: 'basic' },
+        { name: 'Jack Block', texture: jackTexture, type: 'textured' },
+        { name: 'Reddit Revivers', texture: redditTexture, type: 'textured' },
+        { name: 'Silver Play Button', texture: silverPlayTexture, type: 'vertical-slab' }
     ];
+    
     let selectedMaterial = 0;
+    let labelTimeout;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x75bbfd);
-    scene.fog = new THREE.Fog(0x75bbfd, 30, 80);
+    scene.fog = new THREE.Fog(0x75bbfd, 35, 80);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ';
+    
     const renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(1); // Force 1:1 pixel ratio for maximum performance
     document.body.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    dirLight.position.set(20, 40, 20);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    dirLight.position.set(10, 20, 10);
     scene.add(dirLight);
 
     const velocity = new THREE.Vector3();
@@ -179,41 +240,95 @@
     let onGround = false;
 
     const blocks = [];
-    const geometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+    const blockGrid = new Map(); // Spatial Hash for faster lookups and collisions
 
-    function createFloor() {
+    const fullGeometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+    const verticalSlabGeometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, 0.1); 
+
+    function getGridKey(x, y, z) { return `${x},${y},${z}`; }
+
+    function terrainHeight(x, z) {
+        const scale = 0.15;
+        const h = Math.sin(x * scale) * 1.5 + Math.cos(z * scale) * 1.5;
+        return Math.floor(h);
+    }
+
+    function createWorld() {
         for (let x = -GRID_SIZE/2; x < GRID_SIZE/2; x++) {
             for (let z = -GRID_SIZE/2; z < GRID_SIZE/2; z++) {
-                addBlock(x, -1, z, 0);
+                const h = terrainHeight(x, z);
+                addBlock(x, h, z, 0); // Grass
+                for (let y = h - 1; y > h - 4; y--) addBlock(x, y, z, 1); // Dirt
+                for (let y = h - 4; y > h - DEPTH; y--) addBlock(x, y, z, 2); // Stone
             }
         }
     }
 
-    function addBlock(x, y, z, matIndex) {
-        const material = new THREE.MeshLambertMaterial({ color: MATERIALS[matIndex].color });
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(x + 0.5, y + 0.5, z + 0.5);
-        cube.userData.matIndex = matIndex;
+    function addBlock(x, y, z, matIndex, faceNormal = null) {
+        const config = MATERIALS[matIndex];
+        let material;
+        if (config.texture) {
+            material = new THREE.MeshLambertMaterial({ map: config.texture });
+        } else {
+            material = new THREE.MeshLambertMaterial({ color: config.color });
+        }
+        
+        const isSlab = config.type === 'vertical-slab';
+        const geo = isSlab ? verticalSlabGeometry : fullGeometry;
+        const cube = new THREE.Mesh(geo, material);
+        
+        // Ensure strictly snapped vertical position
+        const snappedX = Math.floor(x);
+        const snappedY = Math.floor(y);
+        const snappedZ = Math.floor(z);
+
+        cube.position.set(snappedX + 0.5, snappedY + 0.5, snappedZ + 0.5);
+
+        if (isSlab) {
+            const yaw = camera.rotation.y;
+            const facing = Math.round(yaw / (Math.PI / 2)) % 4;
+            
+            if (Math.abs(facing) === 1 || Math.abs(facing) === 3) {
+                cube.rotation.y = Math.PI / 2;
+            }
+
+            // Move slab to the edge of the 1x1 grid cell based on placement face
+            if (faceNormal) {
+                const offset = 0.45; 
+                cube.position.add(faceNormal.clone().multiplyScalar(offset));
+            } else {
+                cube.position.z += 0.45;
+            }
+        }
+        
+        cube.userData = { matIndex, isSlab, gridX: snappedX, gridY: snappedY, gridZ: snappedZ };
         scene.add(cube);
         blocks.push(cube);
+        
+        // Update spatial hash
+        const key = getGridKey(snappedX, snappedY, snappedZ);
+        if(!blockGrid.has(key)) blockGrid.set(key, []);
+        blockGrid.get(key).push(cube);
     }
 
-    createFloor();
+    createWorld();
 
-    // --- Save and Load Logic ---
     function saveWorld() {
         const worldData = blocks.map(b => ({
-            x: Math.floor(b.position.x - 0.5),
-            y: Math.floor(b.position.y - 0.5),
-            z: Math.floor(b.position.z - 0.5),
-            m: b.userData.matIndex
+            x: b.userData.gridX,
+            y: b.userData.gridY,
+            z: b.userData.gridZ,
+            m: b.userData.matIndex,
+            ry: b.rotation.y,
+            px: b.position.x,
+            py: b.position.y,
+            pz: b.position.z
         }));
-
         const blob = new Blob([JSON.stringify(worldData)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'jackcraft_world.json';
+        a.download = 'jackcraft_map.json';
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -221,95 +336,78 @@
     function loadWorld(event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                while(blocks.length > 0) {
-                    const b = blocks.pop();
-                    scene.remove(b);
-                }
+                blocks.forEach(b => scene.remove(b));
+                blocks.length = 0;
+                blockGrid.clear();
                 data.forEach(item => {
-                    addBlock(item.x, item.y, item.z, item.m);
+                    const config = MATERIALS[item.m];
+                    const geo = config.type === 'vertical-slab' ? verticalSlabGeometry : fullGeometry;
+                    const mat = (config.texture) ? new THREE.MeshLambertMaterial({map:config.texture}) : new THREE.MeshLambertMaterial({color:config.color});
+                    const cube = new THREE.Mesh(geo, mat);
+                    cube.position.set(item.px, item.py, item.pz);
+                    cube.rotation.y = item.ry || 0;
+                    cube.userData = { matIndex: item.m, isSlab: config.type === 'vertical-slab', gridX: item.x, gridY: item.y, gridZ: item.z };
+                    scene.add(cube);
+                    blocks.push(cube);
+                    const key = getGridKey(item.x, item.y, item.z);
+                    if(!blockGrid.has(key)) blockGrid.set(key, []);
+                    blockGrid.get(key).push(cube);
                 });
-                camera.position.set(0, 5, 8);
-                event.target.value = '';
-                
-                setTimeout(() => {
-                    startGame();
-                }, 100);
-            } catch (err) {
-                console.error("Failed to load world:", err);
-            }
+                camera.position.set(0, 10, 10);
+                startGame();
+            } catch (err) { console.error(err); }
         };
         reader.readAsText(file);
     }
 
     function resetWorld() {
-        if(confirm("Are you sure? This will delete everything!")) {
-            window.location.reload();
-        }
+        if(confirm("Wipe world and regenerate?")) window.location.reload();
     }
 
     function startGame() {
-        try {
-            renderer.domElement.requestPointerLock();
-        } catch (e) {
-            console.warn("Pointer lock failed, retrying...", e);
-        }
+        if (lockCooldown) return;
+        renderer.domElement.requestPointerLock();
     }
 
     document.addEventListener('pointerlockchange', () => {
         isLocked = document.pointerLockElement === renderer.domElement;
-        const menu = document.getElementById('menu');
-        const ui = document.getElementById('ui');
-        const crosshair = document.getElementById('crosshair');
-        const inventory = document.getElementById('inventory');
-
-        if (isLocked) {
-            menu.style.display = 'none';
-            ui.style.display = 'block';
-            crosshair.style.display = 'block';
-            inventory.style.display = 'flex';
-            inGame = true;
-        } else {
-            menu.style.display = 'flex';
-            ui.style.display = 'none';
-            crosshair.style.display = 'none';
-            inventory.style.display = 'none';
-            inGame = false;
+        document.getElementById('menu').style.display = isLocked ? 'none' : 'flex';
+        document.getElementById('ui').style.display = isLocked ? 'block' : 'none';
+        document.getElementById('crosshair').style.display = isLocked ? 'block' : 'none';
+        document.getElementById('inventory').style.display = isLocked ? 'flex' : 'none';
+        inGame = isLocked;
+        if (!isLocked) {
+            lockCooldown = true;
+            setTimeout(() => lockCooldown = false, 1200);
         }
     });
 
     document.addEventListener('keydown', (e) => { keys[e.code] = true; });
     document.addEventListener('keyup', (e) => { keys[e.code] = false; });
-    
-    // Switch block with number keys
     document.addEventListener('keydown', (e) => {
         if (!inGame) return;
-        if(e.key === '1') switchMaterial(0);
-        if(e.key === '2') switchMaterial(1);
-        if(e.key === '3') switchMaterial(2);
+        if(e.key >= '1' && e.key <= '6') switchMaterial(parseInt(e.key) - 1);
     });
 
-    // Switch block with scroll wheel
     window.addEventListener('wheel', (e) => {
         if (!inGame) return;
-        
-        // e.deltaY > 0 is scroll down, < 0 is scroll up
-        if (e.deltaY > 0) {
-            selectedMaterial = (selectedMaterial + 1) % MATERIALS.length;
-        } else {
-            selectedMaterial = (selectedMaterial - 1 + MATERIALS.length) % MATERIALS.length;
-        }
+        selectedMaterial = (selectedMaterial + (e.deltaY > 0 ? 1 : -1) + MATERIALS.length) % MATERIALS.length;
         switchMaterial(selectedMaterial);
-    });
+    }, { passive: true });
 
     function switchMaterial(index) {
         selectedMaterial = index;
         document.querySelectorAll('.slot').forEach(s => s.classList.remove('active'));
-        document.getElementById(`slot${index+1}`).classList.add('active');
+        document.getElementById(`slot${index+1}`)?.classList.add('active');
+        const label = document.getElementById('block-name-label');
+        label.innerText = MATERIALS[index].name;
+        label.style.opacity = '1';
+        clearTimeout(labelTimeout);
+        labelTimeout = setTimeout(() => { label.style.opacity = '0'; }, 2000);
     }
 
     document.addEventListener('mousemove', (e) => {
@@ -320,126 +418,117 @@
     });
 
     const raycaster = new THREE.Raycaster();
-    const mouseCenter = new THREE.Vector2(0, 0);
-
     window.addEventListener('mousedown', (e) => {
         if (!isLocked) return;
-        
-        raycaster.setFromCamera(mouseCenter, camera);
+        raycaster.setFromCamera({x:0,y:0}, camera);
         const intersects = raycaster.intersectObjects(blocks);
-
         if (intersects.length > 0) {
             const intersect = intersects[0];
-            
-            if (e.button === 0) { // Place
-                const pos = intersect.object.position.clone().add(intersect.face.normal);
-                if (pos.distanceTo(camera.position) > 0.8) {
-                    addBlock(Math.floor(pos.x - 0.5), Math.floor(pos.y - 0.5), Math.floor(pos.z - 0.5), selectedMaterial);
-                }
-            } else if (e.button === 2) { // Remove
-                if (intersect.object.position.y > 0) {
-                    scene.remove(intersect.object);
-                    const index = blocks.indexOf(intersect.object);
-                    if (index > -1) blocks.splice(index, 1);
+            if (e.button === 0) {
+                const normal = intersect.face.normal.clone();
+                const pos = intersect.point.clone().add(normal.clone().multiplyScalar(0.1));
+                addBlock(pos.x, pos.y, pos.z, selectedMaterial, normal);
+            } else if (e.button === 2) {
+                scene.remove(intersect.object);
+                const idx = blocks.indexOf(intersect.object);
+                if(idx > -1) blocks.splice(idx, 1);
+                const key = getGridKey(intersect.object.userData.gridX, intersect.object.userData.gridY, intersect.object.userData.gridZ);
+                const cell = blockGrid.get(key);
+                if(cell) {
+                    const cIdx = cell.indexOf(intersect.object);
+                    if(cIdx > -1) cell.splice(cIdx, 1);
                 }
             }
         }
     });
 
     window.addEventListener('contextmenu', e => e.preventDefault());
-
-    camera.position.set(0, 2, 8);
+    camera.position.set(0, 5, 10);
 
     function checkCollisions(pos) {
-        for (let i = 0; i < blocks.length; i++) {
-            const b = blocks[i];
-            const bx = b.position.x - 0.5;
-            const by = b.position.y - 0.5;
-            const bz = b.position.z - 0.5;
+        const gx = Math.floor(pos.x);
+        const gy = Math.floor(pos.y);
+        const gz = Math.floor(pos.z);
 
-            const distSq = (pos.x - b.position.x)**2 + (pos.z - b.position.z)**2;
-            if (distSq > 16) continue;
+        // Check 3x3x3 grid around player
+        for(let x = -1; x <= 1; x++) {
+            for(let y = -2; y <= 1; y++) {
+                for(let z = -1; z <= 1; z++) {
+                    const key = getGridKey(gx + x, gy + y, gz + z);
+                    const cellBlocks = blockGrid.get(key);
+                    if (!cellBlocks) continue;
 
-            if (pos.x + PLAYER_RADIUS > bx && pos.x - PLAYER_RADIUS < bx + 1 &&
-                pos.z + PLAYER_RADIUS > bz && pos.z - PLAYER_RADIUS < bz + 1 &&
-                pos.y > by && pos.y - PLAYER_HEIGHT < by + 1) {
-                return true;
+                    for (let b of cellBlocks) {
+                        const bx = b.position.x;
+                        const by = b.position.y;
+                        const bz = b.position.z;
+
+                        let hX = 0.5, hZ = 0.5;
+                        if (b.userData.isSlab) {
+                            if (Math.abs(b.rotation.y) < 0.1) hZ = 0.05;
+                            else hX = 0.05;
+                        }
+
+                        if (pos.x + PLAYER_RADIUS > bx-hX && pos.x - PLAYER_RADIUS < bx+hX &&
+                            pos.z + PLAYER_RADIUS > bz-hZ && pos.z - PLAYER_RADIUS < bz+hZ &&
+                            pos.y + 0.05 > by-0.5 && pos.y - 1.75 < by+0.5) return true;
+                    }
+                }
             }
         }
         return false;
     }
 
     let prevTime = performance.now();
-    
     function animate() {
         requestAnimationFrame(animate);
-        const time = performance.now();
-        const delta = Math.min((time - prevTime) / 1000, 0.05);
+        const delta = Math.min((performance.now() - prevTime) / 1000, 0.1);
+        prevTime = performance.now();
 
         if (isLocked) {
-            velocity.x -= velocity.x * 10.0 * delta;
-            velocity.z -= velocity.z * 10.0 * delta;
-            velocity.y -= 30.0 * delta;
+            velocity.x -= velocity.x * 12 * delta;
+            velocity.z -= velocity.z * 12 * delta;
+            velocity.y -= 35 * delta;
 
-            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-            forward.y = 0;
-            forward.normalize();
+            const f = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion); f.y = 0; f.normalize();
+            const r = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion); r.y = 0; r.normalize();
+            const dir = new THREE.Vector3();
+            if (keys['KeyW']) dir.add(f); if (keys['KeyS']) dir.sub(f);
+            if (keys['KeyA']) dir.sub(r); if (keys['KeyD']) dir.add(r);
             
-            const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-            right.y = 0;
-            right.normalize();
-
-            const moveDir = new THREE.Vector3(0, 0, 0);
-            if (keys['KeyW']) moveDir.add(forward);
-            if (keys['KeyS']) moveDir.sub(forward);
-            if (keys['KeyA']) moveDir.sub(right);
-            if (keys['KeyD']) moveDir.add(right);
-            
-            if (moveDir.lengthSq() > 0) {
-                moveDir.normalize();
-                const speed = 50.0;
-                velocity.x += moveDir.x * speed * delta;
-                velocity.z += moveDir.z * speed * delta;
+            if (dir.lengthSq() > 0) { 
+                dir.normalize(); 
+                velocity.x += dir.x * 70 * delta; 
+                velocity.z += dir.z * 70 * delta; 
             }
 
-            const oldX = camera.position.x;
-            const oldZ = camera.position.z;
-
-            camera.position.x += velocity.x * delta;
-            if (checkCollisions(camera.position)) camera.position.x = oldX;
-
-            camera.position.z += velocity.z * delta;
-            if (checkCollisions(camera.position)) camera.position.z = oldZ;
-
-            const oldY = camera.position.y;
-            camera.position.y += velocity.y * delta;
-            
-            if (checkCollisions(camera.position)) {
-                if (velocity.y < 0) onGround = true;
-                camera.position.y = oldY;
-                velocity.y = 0;
-            } else {
-                onGround = false;
+            const nextX = camera.position.clone(); nextX.x += velocity.x * delta;
+            if (!checkCollisions(nextX)) camera.position.x = nextX.x;
+            const nextZ = camera.position.clone(); nextZ.z += velocity.z * delta;
+            if (!checkCollisions(nextZ)) camera.position.z = nextZ.z;
+            const nextY = camera.position.clone(); nextY.y += velocity.y * delta;
+            if (checkCollisions(nextY)) { 
+                if (velocity.y < 0) onGround = true; 
+                velocity.y = 0; 
+            } else { 
+                camera.position.y = nextY.y; 
+                onGround = false; 
             }
 
-            if (onGround && keys['Space']) {
-                velocity.y = 11;
-                onGround = false;
-            }
-        } else {
-            camera.rotation.y += 0.001;
+            if (onGround && keys['Space']) { velocity.y = 13; onGround = false; }
+            if (camera.position.y < -50) camera.position.set(0, 10, 0); 
+        } else { 
+            camera.rotation.y += 0.0015; 
         }
-
-        prevTime = time;
         renderer.render(scene, camera);
     }
-
+    
     window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.aspect = window.innerWidth / window.innerHeight; 
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
-
+    
     window.onload = animate;
 </script>
 </body>
