@@ -9,20 +9,41 @@
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; }
         canvas { display: block; }
         
-        #menu {
+        /* Overlays */
+        .menu-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             z-index: 100;
+            transition: all 0.5s ease;
+        }
+
+        #menu { 
+            background: rgba(255, 255, 255, 0.1); 
+        }
+
+        #pause-menu { 
+            display: none; 
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        #settings-menu { 
+            display: none; 
+            z-index: 101; 
+            background: rgba(0, 0, 0, 0.7); 
+            backdrop-filter: blur(15px);
         }
 
         #logo-container {
+            position: relative;
             width: 80%;
-            max-width: 800px;
+            max-width: 600px;
             margin-bottom: 40px;
             display: flex;
             justify-content: center;
@@ -32,41 +53,120 @@
             width: 100%;
             height: auto;
             image-rendering: pixelated;
-            filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));
+            /* Removed drop-shadow filter */
+        }
+
+        #splash-text {
+            position: absolute;
+            right: -10px;
+            bottom: -15px;
+            color: #FFFF00;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            font-size: 24px;
+            text-shadow: 2px 2px 0px #3f3f00;
+            transform: rotate(-20deg);
+            white-space: nowrap;
+            pointer-events: none;
+            animation: splash-pulse 0.5s infinite alternate ease-in-out;
+            z-index: 110;
+        }
+
+        @keyframes splash-pulse {
+            from { transform: rotate(-20deg) scale(1); }
+            to { transform: rotate(-20deg) scale(1.1); }
+        }
+
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 320px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
         }
 
         .menu-btn {
             background: #333;
             color: #fff;
             border: 3px solid #666;
-            padding: 15px 0;
-            font-size: 20px;
+            padding: 12px 0;
+            font-size: 16px;
             cursor: pointer;
-            margin: 10px;
-            width: 350px;
+            width: 100%;
             text-align: center;
             text-transform: uppercase;
             font-weight: bold;
             transition: all 0.2s;
+            box-sizing: border-box;
+            user-select: none;
+            box-shadow: 0 4px 0 #111;
         }
 
         .menu-btn:hover {
             background: #555;
             border-color: #fff;
-            transform: scale(1.02);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #111;
+        }
+
+        .menu-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #111;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 320px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        select, input[type="checkbox"] {
+            background: #222;
+            color: white;
+            border: 2px solid #666;
+            padding: 5px 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        input[type="checkbox"] {
+            width: 25px;
+            height: 25px;
+        }
+
+        #version-info {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: white;
+            font-size: 13px;
+            z-index: 200;
+            pointer-events: none;
+            text-shadow: 1px 1px 3px #000;
+            line-height: 1.4;
+            font-weight: bold;
         }
 
         #ui {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 65px; 
+            left: 15px;
             color: #fff;
             pointer-events: none;
-            font-size: 16px;
+            font-size: 14px;
             text-shadow: 2px 2px 4px #000;
             display: none;
             z-index: 10;
             line-height: 1.5;
+            opacity: 0.9;
         }
 
         #crosshair {
@@ -88,6 +188,19 @@
         #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
         #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
 
+        #respawn-timer {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff4444;
+            font-size: 32px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #000;
+            display: none;
+            z-index: 1000;
+        }
+
         #inventory-container {
             position: absolute;
             bottom: 30px;
@@ -96,21 +209,38 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
             pointer-events: none;
             z-index: 10;
         }
 
-        #block-name-label {
-            color: #fff;
-            font-size: 24px;
-            text-shadow: 2px 2px 4px #000;
+        #block-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
+        }
+
+        #block-name-label {
+            color: #fff;
+            font-size: 20px;
+            text-shadow: 2px 2px 4px #000;
             background: rgba(0,0,0,0.7);
-            padding: 6px 20px;
+            padding: 6px 15px;
             border-radius: 8px;
             font-weight: bold;
+        }
+
+        #block-desc-label {
+            color: #ffcc00;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px #000;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-weight: 500;
         }
 
         #inventory {
@@ -118,23 +248,23 @@
             background: rgba(0,0,0,0.7);
             border: 3px solid #555;
             pointer-events: auto;
-            padding: 6px;
-            gap: 8px;
+            padding: 5px;
+            gap: 6px;
             border-radius: 4px;
         }
         .slot {
-            width: 60px;
-            height: 60px;
+            width: 45px;
+            height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #fff;
-            font-size: 20px;
+            font-size: 14px;
             opacity: 0.5;
             background-size: cover;
             background-position: center;
             image-rendering: pixelated;
-            border: 3px solid transparent;
+            border: 2px solid transparent;
             font-weight: bold;
             transition: all 0.1s;
         }
@@ -150,43 +280,228 @@
 </head>
 <body>
 
-<div id="menu">
+<div id="version-info">
+    Version 0.1<br>
+    Created by Kris, Hosted on Jack.Fun
+</div>
+
+<div id="respawn-timer">Respawning in 5...</div>
+
+<!-- Main Menu -->
+<div id="menu" class="menu-overlay">
     <div id="logo-container">
         <img id="logo" src="jcraft 2.png" alt="JACKCRAFT">
+        <div id="splash-text"></div>
     </div>
-    <div class="menu-btn" onclick="startGame()">Play</div>
-    <div class="menu-btn" onclick="saveWorld()">Save Map</div>
-    <div class="menu-btn" onclick="document.getElementById('fileInput').click()">Load Map</div>
-    <div class="menu-btn" onclick="resetWorld()">Reset World</div>
+    <div class="btn-container">
+        <div class="menu-btn" id="btn-play" onclick="handlePlayClick()">Play</div>
+        <div class="menu-btn" id="btn-settings-main" onclick="toggleSettings(true)">Settings</div>
+        <div class="menu-btn" id="btn-load-main" onclick="document.getElementById('fileInput').click()">Load World</div>
+    </div>
+</div>
+
+<!-- Pause Menu -->
+<div id="pause-menu" class="menu-overlay">
+    <h1 style="color: white; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 5px;" id="pause-title">Game Paused</h1>
+    <div class="btn-container">
+        <div class="menu-btn" id="btn-resume" onclick="startGame()">Back to Game</div>
+        <div class="menu-btn" id="btn-settings-pause" onclick="toggleSettings(true)">Settings</div>
+        <div class="btn-row">
+            <div class="menu-btn" id="btn-save-pause" onclick="saveWorld()">Save</div>
+            <div class="menu-btn" id="btn-load-pause" onclick="document.getElementById('fileInput').click()">Load</div>
+        </div>
+        <div class="menu-btn" id="btn-quit" onclick="backToMainMenu()">Main Menu</div>
+    </div>
+</div>
+
+<!-- Settings Menu -->
+<div id="settings-menu" class="menu-overlay">
+    <h2 style="color: white; margin-bottom: 30px;" id="settings-title">Settings</h2>
+    
+    <div class="setting-row">
+        <span id="label-language" style="font-size: 18px;">Language</span>
+        <select id="lang-select" onchange="changeLanguage(this.value)">
+            <option value="en" selected>English</option>
+            <option value="bg">Български</option>
+        </select>
+    </div>
+
+    <div class="setting-row">
+        <span id="label-reduced-flashing" style="font-size: 18px;">Reduced Flashing</span>
+        <input type="checkbox" id="check-reduced-flashing" onchange="toggleFlashingSensitivity(this.checked)">
+    </div>
+
+    <div class="btn-container">
+        <div class="menu-btn" id="btn-back" onclick="toggleSettings(false)">Back</div>
+    </div>
 </div>
 
 <input type="file" id="fileInput" accept=".json" onchange="loadWorld(event)">
 
 <div id="ui">
-    [WASD] Move &nbsp; [SPACE] Jump<br>
-    [L-CLICK] Place Block &nbsp; [R-CLICK] Destroy<br>
-    [SCROLL] or [1-6] Select Block<br>
-    [ESC] Pause/Menu
+    <span id="control-wasd">[WASD] Move</span> &nbsp; <span id="control-space">[SPACE] Jump</span><br>
+    <span id="control-lclick">[L-CLICK] Break Block</span> &nbsp; <span id="control-rclick">[R-CLICK] Place Block</span><br>
+    <span id="control-scroll">[SCROLL] or [1-9] Select Block</span><br>
+    <span id="control-esc">[ESC] Pause/Menu</span>
 </div>
 
 <div id="crosshair"></div>
 
 <div id="inventory-container">
-    <div id="block-name-label">Grass</div>
+    <div id="block-info">
+        <div id="block-name-label">Grass</div>
+        <div id="block-desc-label">Left Click to detonate it!</div>
+    </div>
     <div id="inventory">
-        <div id="slot1" class="slot active" style="background-color: #345e28;">1</div>
-        <div id="slot2" class="slot" style="background-color: #5d4037;">2</div>
-        <div id="slot3" class="slot" style="background-color: #616161;">3</div>
-        <div id="slot4" class="slot" style="background-image: url('JackSucksAtLife.webp');">4</div>
-        <div id="slot5" class="slot" style="background-image: url('reddit-revivers-logo.png');">5</div>
-        <div id="slot6" class="slot" style="background-image: url('youtube-5357882_1280.webp');">6</div>
+        <div id="slot1" class="slot active">1</div>
+        <div id="slot2" class="slot">2</div>
+        <div id="slot3" class="slot">3</div>
+        <div id="slot4" class="slot">4</div>
+        <div id="slot5" class="slot">5</div>
+        <div id="slot6" class="slot">6</div>
+        <div id="slot7" class="slot">7</div>
+        <div id="slot8" class="slot">8</div>
+        <div id="slot9" class="slot">9</div>
     </div>
 </div>
 
 <script>
+    const SPLASH_TEXTS = [
+        "I haven't had that much s-",
+        "Pancakes tutorial when, PWK?",
+        "Join r/WeeWeeBush!",
+        "Join the reddit guys, link is in the description",
+        "Join r/JackSucksAtLife!",
+        "Jack.fun is cool!",
+        "BEANS ON TOAST",
+        "hhhhhhhhhhhhh",
+        "Daveed!! Where are you??",
+        "Also try Minecraft",
+        "Gemini, where are my shoes?",
+        "Bulgarian Made!"
+    ];
+
+    const TRANSLATIONS = {
+        en: {
+            play: "Play",
+            settings: "Settings",
+            save: "Save",
+            load: "Load World",
+            back: "Back",
+            language: "Language",
+            reducedFlashing: "Reduced Flashing",
+            wasd: "[WASD] Move",
+            jump: "[SPACE] Jump",
+            break: "[L-CLICK] Break Block",
+            place: "[R-CLICK] Place Block",
+            select: "[SCROLL] or [1-9] Select Block",
+            esc: "[ESC] Pause/Menu",
+            blocks: ["Grass", "Dirt", "Stone", "Wood", "Leaves", "Jack Block", "Reddit Revivers", "Silver Play Button", "Wee Wee TNT"],
+            version: "Version 0.2<br>Created by Kris, Hosted on Jack.Fun",
+            paused: "Game Paused",
+            resume: "Back to Game",
+            quit: "Main Menu",
+            respawning: "Respawning in "
+        },
+        bg: {
+            play: "Играй",
+            settings: "Настройки",
+            save: "Запис",
+            load: "Зареди Свят",
+            back: "Назад",
+            language: "Език",
+            reducedFlashing: "Намалено мигане",
+            wasd: "[WASD] Движение",
+            jump: "[SPACE] Скок",
+            break: "[L-CLICK] Счупи блок",
+            place: "[R-CLICK] Постави блок",
+            select: "[SCROLL] или [1-9] Избор на блок",
+            esc: "[ESC] Пауза/Меню",
+            blocks: ["Трева", "Пръст", "Камък", "Дърво", "Листа", "Джак Блок", "Reddit Revivers", "Сребърен Бутон", "Wee Wee TNT"],
+            version: "Версия 0.1<br>Създадено от Kris, Хоствано на Jack.Fun",
+            paused: "Играта е на пауза",
+            resume: "Обратно в играта",
+            quit: "Главно Меню",
+            respawning: "Прераждане след "
+        }
+    };
+
+    let currentLang = 'en';
+    let isGameStarted = false; 
+    let hasGeneratedPlayWorld = false;
+    let reducedFlashing = false;
+
+    function setRandomSplash() {
+        const splashEl = document.getElementById('splash-text');
+        const randomText = SPLASH_TEXTS[Math.floor(Math.random() * SPLASH_TEXTS.length)];
+        splashEl.innerText = randomText;
+    }
+
+    function toggleFlashingSensitivity(enabled) {
+        reducedFlashing = enabled;
+    }
+
+    function changeLanguage(lang) {
+        currentLang = lang;
+        const t = TRANSLATIONS[lang];
+        
+        document.getElementById('btn-play').innerText = t.play;
+        document.getElementById('btn-settings-main').innerText = t.settings;
+        document.getElementById('btn-settings-pause').innerText = t.settings;
+        document.getElementById('btn-load-main').innerText = t.load;
+        document.getElementById('btn-back').innerText = t.back;
+        
+        document.getElementById('settings-title').innerText = t.settings;
+        document.getElementById('label-language').innerText = t.language;
+        document.getElementById('label-reduced-flashing').innerText = t.reducedFlashing;
+        
+        document.getElementById('control-wasd').innerText = t.wasd;
+        document.getElementById('control-space').innerText = t.jump;
+        document.getElementById('control-lclick').innerText = t.break;
+        document.getElementById('control-rclick').innerText = t.place;
+        document.getElementById('control-scroll').innerText = t.select;
+        document.getElementById('control-esc').innerText = t.esc;
+
+        document.getElementById('version-info').innerHTML = t.version;
+        document.getElementById('pause-title').innerText = t.paused;
+        document.getElementById('btn-resume').innerText = t.resume;
+        document.getElementById('btn-save-pause').innerText = t.save;
+        document.getElementById('btn-load-pause').innerText = t.load.split(" ")[0]; 
+        document.getElementById('btn-quit').innerText = t.quit;
+
+        for(let i=0; i<MATERIALS.length; i++) {
+            MATERIALS[i].name = t.blocks[i];
+        }
+        updateSlotLabels();
+    }
+
+    function toggleSettings(show) {
+        document.getElementById('settings-menu').style.display = show ? 'flex' : 'none';
+        if (!show) {
+            if (isGameStarted) {
+                document.getElementById('pause-menu').style.display = 'flex';
+            } else {
+                document.getElementById('menu').style.display = 'flex';
+            }
+        } else {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('pause-menu').style.display = 'none';
+        }
+    }
+
+    function backToMainMenu() {
+        isGameStarted = false;
+        hasGeneratedPlayWorld = false; 
+        document.getElementById('pause-menu').style.display = 'none';
+        document.getElementById('menu').style.display = 'flex';
+        setRandomSplash(); // New splash when returning
+        clearWorld();
+        createMenuWorld();
+    }
+
     const BLOCK_SIZE = 1;
     const GRID_SIZE = 50; 
-    const DEPTH = 12;      // Even deeper world
+    const DEPTH = 12;      
     const PLAYER_RADIUS = 0.3;
 
     let lockCooldown = false;
@@ -199,17 +514,25 @@
         return t;
     }
 
-    const jackTexture = loadPixelTexture('JackSucksAtLife.webp');
-    const redditTexture = loadPixelTexture('reddit-revivers-logo.png');
-    const silverPlayTexture = loadPixelTexture('youtube-5357882_1280.webp');
+    const jackTexture = loader.load('JackSucksAtLife.webp');
+    jackTexture.magFilter = THREE.NearestFilter;
+    const redditTexture = loader.load('reddit-revivers-logo.png');
+    redditTexture.magFilter = THREE.NearestFilter;
+    const silverPlayTexture = loader.load('youtube-5357882_1280.webp');
+    silverPlayTexture.magFilter = THREE.NearestFilter;
+    const wntTexture = loader.load('image_b6720e.png');
+    wntTexture.magFilter = THREE.NearestFilter;
 
     const MATERIALS = [
         { name: 'Grass', color: 0x345e28, type: 'basic' },
         { name: 'Dirt', color: 0x5d4037, type: 'basic' },
         { name: 'Stone', color: 0x616161, type: 'basic' },
+        { name: 'Wood', color: 0x4a2f1b, type: 'basic' },
+        { name: 'Leaves', color: 0x2e5a27, type: 'basic' },
         { name: 'Jack Block', texture: jackTexture, type: 'textured' },
         { name: 'Reddit Revivers', texture: redditTexture, type: 'textured' },
-        { name: 'Silver Play Button', texture: silverPlayTexture, type: 'vertical-slab' }
+        { name: 'Silver Play Button', texture: silverPlayTexture, type: 'vertical-slab' },
+        { name: 'Wee Wee TNT', texture: wntTexture, type: 'tnt' }
     ];
     
     let selectedMaterial = 0;
@@ -224,7 +547,7 @@
     
     const renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(1); // Force 1:1 pixel ratio for maximum performance
+    renderer.setPixelRatio(1);
     document.body.appendChild(renderer.domElement);
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
@@ -236,36 +559,99 @@
     const velocity = new THREE.Vector3();
     const keys = {};
     let isLocked = false;
-    let inGame = false;
     let onGround = false;
 
+    let isFallingTimerActive = false;
+    let fallingStartTime = 0;
+
     const blocks = [];
-    const blockGrid = new Map(); // Spatial Hash for faster lookups and collisions
+    const blockGrid = new Map(); 
 
     const fullGeometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
     const verticalSlabGeometry = new THREE.BoxGeometry(BLOCK_SIZE, BLOCK_SIZE, 0.1); 
 
-    function getGridKey(x, y, z) { return `${x},${y},${z}`; }
+    function getGridKey(x, y, z) { return `${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`; }
 
-    function terrainHeight(x, z) {
+    function terrainHeight(x, z, seedOffset = 0) {
         const scale = 0.15;
-        const h = Math.sin(x * scale) * 1.5 + Math.cos(z * scale) * 1.5;
+        const s = seedOffset;
+        const h = Math.sin((x + s) * scale) * 1.5 + Math.cos((z + s) * scale) * 1.5;
         return Math.floor(h);
     }
 
-    function createWorld() {
+    function clearWorld() {
+        blocks.forEach(b => scene.remove(b));
+        blocks.length = 0;
+        blockGrid.clear();
+    }
+
+    function createMenuWorld() {
+        clearWorld();
+        const menuSeed = 1000;
         for (let x = -GRID_SIZE/2; x < GRID_SIZE/2; x++) {
             for (let z = -GRID_SIZE/2; z < GRID_SIZE/2; z++) {
-                const h = terrainHeight(x, z);
-                addBlock(x, h, z, 0); // Grass
-                for (let y = h - 1; y > h - 4; y--) addBlock(x, y, z, 1); // Dirt
-                for (let y = h - 4; y > h - DEPTH; y--) addBlock(x, y, z, 2); // Stone
+                const h = terrainHeight(x, z, menuSeed);
+                addBlock(x, h, z, 0); 
+                for (let y = h - 1; y > h - 4; y--) addBlock(x, y, z, 1); 
+                for (let y = h - 4; y > h - DEPTH; y--) addBlock(x, y, z, 2); 
+                
+                if (Math.random() < 0.02 && (Math.abs(x) > 3 || Math.abs(z) > 3)) {
+                    createTree(x, h + 1, z);
+                }
+            }
+        }
+        camera.position.set(0, 5, 0);
+        camera.rotation.set(0, 0, 0);
+    }
+
+    function createWorld() {
+        clearWorld();
+        hasGeneratedPlayWorld = true;
+        const gameSeed = Math.random() * 10000; 
+        for (let x = -GRID_SIZE/2; x < GRID_SIZE/2; x++) {
+            for (let z = -GRID_SIZE/2; z < GRID_SIZE/2; z++) {
+                const h = terrainHeight(x, z, gameSeed);
+                addBlock(x, h, z, 0); 
+                for (let y = h - 1; y > h - 4; y--) addBlock(x, y, z, 1); 
+                for (let y = h - 4; y > h - DEPTH; y--) addBlock(x, y, z, 2); 
+
+                if (Math.random() < 0.02 && Math.abs(x) > 2 && Math.abs(z) > 2) {
+                    createTree(x, h + 1, z);
+                }
+            }
+        }
+        camera.position.set(0, 10, 0);
+        velocity.set(0, 0, 0);
+    }
+
+    function createTree(x, y, z) {
+        const height = 4 + Math.floor(Math.random() * 2);
+        for (let i = 0; i < height; i++) {
+            addBlock(x, y + i, z, 3); 
+        }
+        for (let lx = -2; lx <= 2; lx++) {
+            for (let lz = -2; lz <= 2; lz++) {
+                for (let ly = 0; ly < 3; ly++) {
+                    if (Math.abs(lx) === 2 && Math.abs(lz) === 2 && ly > 0) continue;
+                    addBlock(x + lx, y + height + ly - 1, z + lz, 4); 
+                }
             }
         }
     }
 
     function addBlock(x, y, z, matIndex, faceNormal = null) {
+        const gx = Math.floor(x);
+        const gy = Math.floor(y);
+        const gz = Math.floor(z);
+        const key = getGridKey(gx, gy, gz);
+        
         const config = MATERIALS[matIndex];
+        
+        if (config.type !== 'vertical-slab') {
+            const existing = blockGrid.get(key);
+            if (existing && existing.some(b => !b.userData.isSlab)) return;
+        }
+
         let material;
         if (config.texture) {
             material = new THREE.MeshLambertMaterial({ map: config.texture });
@@ -277,22 +663,13 @@
         const geo = isSlab ? verticalSlabGeometry : fullGeometry;
         const cube = new THREE.Mesh(geo, material);
         
-        // Ensure strictly snapped vertical position
-        const snappedX = Math.floor(x);
-        const snappedY = Math.floor(y);
-        const snappedZ = Math.floor(z);
-
-        cube.position.set(snappedX + 0.5, snappedY + 0.5, snappedZ + 0.5);
+        cube.position.set(gx + 0.5, gy + 0.5, gz + 0.5);
 
         if (isSlab) {
             const yaw = camera.rotation.y;
             const facing = Math.round(yaw / (Math.PI / 2)) % 4;
-            
-            if (Math.abs(facing) === 1 || Math.abs(facing) === 3) {
-                cube.rotation.y = Math.PI / 2;
-            }
+            if (Math.abs(facing) === 1 || Math.abs(facing) === 3) cube.rotation.y = Math.PI / 2;
 
-            // Move slab to the edge of the 1x1 grid cell based on placement face
             if (faceNormal) {
                 const offset = 0.45; 
                 cube.position.add(faceNormal.clone().multiplyScalar(offset));
@@ -301,35 +678,138 @@
             }
         }
         
-        cube.userData = { matIndex, isSlab, gridX: snappedX, gridY: snappedY, gridZ: snappedZ };
+        cube.userData = { matIndex, isSlab, gridX: gx, gridY: gy, gridZ: gz };
         scene.add(cube);
         blocks.push(cube);
         
-        // Update spatial hash
-        const key = getGridKey(snappedX, snappedY, snappedZ);
         if(!blockGrid.has(key)) blockGrid.set(key, []);
         blockGrid.get(key).push(cube);
+        return cube;
     }
 
-    createWorld();
+    function removeBlock(block) {
+        scene.remove(block);
+        const idx = blocks.indexOf(block);
+        if(idx > -1) blocks.splice(idx, 1);
+        const key = getGridKey(block.userData.gridX, block.userData.gridY, block.userData.gridZ);
+        const cell = blockGrid.get(key);
+        if(cell) {
+            const cIdx = cell.indexOf(block);
+            if(cIdx > -1) cell.splice(cIdx, 1);
+        }
+    }
+
+    function explodeAt(x, y, z, radius = 3) {
+        const gx = Math.floor(x);
+        const gy = Math.floor(y);
+        const gz = Math.floor(z);
+        
+        for (let ix = -radius; ix <= radius; ix++) {
+            for (let iy = -radius; iy <= radius; iy++) {
+                for (let iz = -radius; iz <= radius; iz++) {
+                    const distSq = ix*ix + iy*iy + iz*iz;
+                    if (distSq <= radius * radius) {
+                        const key = getGridKey(gx + ix, gy + iy, gz + iz);
+                        const cell = blockGrid.get(key);
+                        if (cell) {
+                            [...cell].forEach(b => removeBlock(b));
+                        }
+                    }
+                }
+            }
+        }
+
+        const pPos = camera.position;
+        const dx = pPos.x - (gx + 0.5);
+        const dy = pPos.y - (gy + 0.5);
+        const dz = pPos.z - (gz + 0.5);
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        if (dist < radius + 1) {
+            const power = (radius + 2 - dist) * 5;
+            velocity.x += (dx / dist) * power;
+            velocity.y += Math.max(5, (dy / dist) * power);
+            velocity.z += (dz / dist) * power;
+        }
+
+        const flashGeo = new THREE.SphereGeometry(radius, 16, 16);
+        const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+        const flash = new THREE.Mesh(flashGeo, flashMat);
+        flash.position.set(gx + 0.5, gy + 0.5, gz + 0.5);
+        scene.add(flash);
+        let scale = 0.1;
+        const interval = setInterval(() => {
+            scale += 0.2;
+            flash.scale.set(scale, scale, scale);
+            flash.material.opacity -= 0.1;
+            if (flash.material.opacity <= 0) {
+                scene.remove(flash);
+                clearInterval(interval);
+            }
+        }, 30);
+    }
+
+    function igniteWNT(block) {
+        if (block.userData.ignited) return;
+        block.userData.ignited = true;
+        
+        const startTime = Date.now();
+        const duration = 5000;
+        const originalMaterial = block.material;
+        const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        
+        const tick = () => {
+            if (!block.parent) return; 
+            const elapsed = Date.now() - startTime;
+            if (elapsed >= duration) {
+                explodeAt(block.userData.gridX, block.userData.gridY, block.userData.gridZ);
+                return;
+            }
+
+            let flashRate;
+            if (reducedFlashing) {
+                flashRate = 1000; 
+            } else {
+                const speedProgress = 1 - (elapsed / duration); 
+                flashRate = 100 + (400 * speedProgress); 
+            }
+            
+            const isWhite = Math.floor(elapsed / flashRate) % 2 === 0;
+            block.material = isWhite ? whiteMaterial : originalMaterial;
+            requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+
+    function updateSlotLabels() {
+        for (let i = 0; i < MATERIALS.length; i++) {
+            const slot = document.getElementById(`slot${i+1}`);
+            if (!slot) continue;
+            const mat = MATERIALS[i];
+            
+            if (mat.texture) {
+                if (mat.texture.image && mat.texture.image.src) {
+                    slot.style.backgroundImage = `url('${mat.texture.image.src}')`;
+                } else {
+                    slot.style.backgroundColor = '#444';
+                }
+                slot.innerText = '';
+            } else {
+                slot.style.backgroundImage = 'none';
+                slot.style.backgroundColor = '#' + mat.color.toString(16).padStart(6, '0');
+                slot.innerText = i + 1;
+            }
+        }
+    }
 
     function saveWorld() {
         const worldData = blocks.map(b => ({
-            x: b.userData.gridX,
-            y: b.userData.gridY,
-            z: b.userData.gridZ,
-            m: b.userData.matIndex,
-            ry: b.rotation.y,
-            px: b.position.x,
-            py: b.position.y,
-            pz: b.position.z
+            x: b.userData.gridX, y: b.userData.gridY, z: b.userData.gridZ, m: b.userData.matIndex,
+            ry: b.rotation.y, px: b.position.x, py: b.position.y, pz: b.position.z
         }));
         const blob = new Blob([JSON.stringify(worldData)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = 'jackcraft_map.json';
-        a.click();
+        a.href = url; a.download = 'jackcraft_map.json'; a.click();
         URL.revokeObjectURL(url);
     }
 
@@ -340,9 +820,7 @@
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                blocks.forEach(b => scene.remove(b));
-                blocks.length = 0;
-                blockGrid.clear();
+                clearWorld();
                 data.forEach(item => {
                     const config = MATERIALS[item.m];
                     const geo = config.type === 'vertical-slab' ? verticalSlabGeometry : fullGeometry;
@@ -357,15 +835,18 @@
                     if(!blockGrid.has(key)) blockGrid.set(key, []);
                     blockGrid.get(key).push(cube);
                 });
-                camera.position.set(0, 10, 10);
+                hasGeneratedPlayWorld = true;
                 startGame();
             } catch (err) { console.error(err); }
         };
         reader.readAsText(file);
     }
 
-    function resetWorld() {
-        if(confirm("Wipe world and regenerate?")) window.location.reload();
+    function handlePlayClick() {
+        if (!hasGeneratedPlayWorld) {
+            createWorld(); 
+        }
+        startGame();
     }
 
     function startGame() {
@@ -375,26 +856,39 @@
 
     document.addEventListener('pointerlockchange', () => {
         isLocked = document.pointerLockElement === renderer.domElement;
-        document.getElementById('menu').style.display = isLocked ? 'none' : 'flex';
-        document.getElementById('ui').style.display = isLocked ? 'block' : 'none';
-        document.getElementById('crosshair').style.display = isLocked ? 'block' : 'none';
-        document.getElementById('inventory').style.display = isLocked ? 'flex' : 'none';
-        inGame = isLocked;
-        if (!isLocked) {
+        if (isLocked) {
+            isGameStarted = true;
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('pause-menu').style.display = 'none';
+            document.getElementById('settings-menu').style.display = 'none';
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+            document.getElementById('inventory').style.display = 'flex';
+        } else {
+            if (isGameStarted) {
+                document.getElementById('pause-menu').style.display = 'flex';
+                document.getElementById('menu').style.display = 'none';
+            } else {
+                document.getElementById('menu').style.display = 'flex';
+                document.getElementById('pause-menu').style.display = 'none';
+            }
+            document.getElementById('ui').style.display = 'none';
+            document.getElementById('crosshair').style.display = 'none';
+            document.getElementById('inventory').style.display = 'none';
             lockCooldown = true;
-            setTimeout(() => lockCooldown = false, 1200);
+            setTimeout(() => lockCooldown = false, 500);
         }
     });
 
-    document.addEventListener('keydown', (e) => { keys[e.code] = true; });
-    document.addEventListener('keyup', (e) => { keys[e.code] = false; });
-    document.addEventListener('keydown', (e) => {
-        if (!inGame) return;
-        if(e.key >= '1' && e.key <= '6') switchMaterial(parseInt(e.key) - 1);
+    document.addEventListener('keydown', (e) => { 
+        keys[e.code] = true; 
+        if (!isLocked) return;
+        if(e.key >= '1' && e.key <= '9') switchMaterial(parseInt(e.key) - 1);
     });
+    document.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
     window.addEventListener('wheel', (e) => {
-        if (!inGame) return;
+        if (!isLocked) return;
         selectedMaterial = (selectedMaterial + (e.deltaY > 0 ? 1 : -1) + MATERIALS.length) % MATERIALS.length;
         switchMaterial(selectedMaterial);
     }, { passive: true });
@@ -403,11 +897,24 @@
         selectedMaterial = index;
         document.querySelectorAll('.slot').forEach(s => s.classList.remove('active'));
         document.getElementById(`slot${index+1}`)?.classList.add('active');
+        
         const label = document.getElementById('block-name-label');
-        label.innerText = MATERIALS[index].name;
-        label.style.opacity = '1';
+        const desc = document.getElementById('block-desc-label');
+        const info = document.getElementById('block-info');
+        
+        const mat = MATERIALS[index];
+        label.innerText = mat.name;
+        
+        if (mat.type === 'tnt') {
+            desc.style.display = 'block';
+            desc.innerText = 'Left Click to detonate it!';
+        } else {
+            desc.style.display = 'none';
+        }
+
+        info.style.opacity = '1';
         clearTimeout(labelTimeout);
-        labelTimeout = setTimeout(() => { label.style.opacity = '0'; }, 2000);
+        labelTimeout = setTimeout(() => { info.style.opacity = '0'; }, 2000);
     }
 
     document.addEventListener('mousemove', (e) => {
@@ -424,51 +931,44 @@
         const intersects = raycaster.intersectObjects(blocks);
         if (intersects.length > 0) {
             const intersect = intersects[0];
-            if (e.button === 0) {
+            const clickedBlock = intersect.object;
+            const matConfig = MATERIALS[clickedBlock.userData.matIndex];
+
+            if (e.button === 2) { 
                 const normal = intersect.face.normal.clone();
                 const pos = intersect.point.clone().add(normal.clone().multiplyScalar(0.1));
                 addBlock(pos.x, pos.y, pos.z, selectedMaterial, normal);
-            } else if (e.button === 2) {
-                scene.remove(intersect.object);
-                const idx = blocks.indexOf(intersect.object);
-                if(idx > -1) blocks.splice(idx, 1);
-                const key = getGridKey(intersect.object.userData.gridX, intersect.object.userData.gridY, intersect.object.userData.gridZ);
-                const cell = blockGrid.get(key);
-                if(cell) {
-                    const cIdx = cell.indexOf(intersect.object);
-                    if(cIdx > -1) cell.splice(cIdx, 1);
+            } else if (e.button === 0) { 
+                if (matConfig.type === 'tnt') {
+                    igniteWNT(clickedBlock);
+                } else {
+                    removeBlock(clickedBlock);
                 }
             }
         }
     });
 
     window.addEventListener('contextmenu', e => e.preventDefault());
-    camera.position.set(0, 5, 10);
 
     function checkCollisions(pos) {
         const gx = Math.floor(pos.x);
         const gy = Math.floor(pos.y);
         const gz = Math.floor(pos.z);
-
-        // Check 3x3x3 grid around player
         for(let x = -1; x <= 1; x++) {
             for(let y = -2; y <= 1; y++) {
                 for(let z = -1; z <= 1; z++) {
                     const key = getGridKey(gx + x, gy + y, gz + z);
                     const cellBlocks = blockGrid.get(key);
                     if (!cellBlocks) continue;
-
                     for (let b of cellBlocks) {
                         const bx = b.position.x;
                         const by = b.position.y;
                         const bz = b.position.z;
-
                         let hX = 0.5, hZ = 0.5;
                         if (b.userData.isSlab) {
                             if (Math.abs(b.rotation.y) < 0.1) hZ = 0.05;
                             else hX = 0.05;
                         }
-
                         if (pos.x + PLAYER_RADIUS > bx-hX && pos.x - PLAYER_RADIUS < bx+hX &&
                             pos.z + PLAYER_RADIUS > bz-hZ && pos.z - PLAYER_RADIUS < bz+hZ &&
                             pos.y + 0.05 > by-0.5 && pos.y - 1.75 < by+0.5) return true;
@@ -489,19 +989,16 @@
             velocity.x -= velocity.x * 12 * delta;
             velocity.z -= velocity.z * 12 * delta;
             velocity.y -= 35 * delta;
-
             const f = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion); f.y = 0; f.normalize();
             const r = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion); r.y = 0; r.normalize();
             const dir = new THREE.Vector3();
             if (keys['KeyW']) dir.add(f); if (keys['KeyS']) dir.sub(f);
             if (keys['KeyA']) dir.sub(r); if (keys['KeyD']) dir.add(r);
-            
             if (dir.lengthSq() > 0) { 
                 dir.normalize(); 
                 velocity.x += dir.x * 70 * delta; 
                 velocity.z += dir.z * 70 * delta; 
             }
-
             const nextX = camera.position.clone(); nextX.x += velocity.x * delta;
             if (!checkCollisions(nextX)) camera.position.x = nextX.x;
             const nextZ = camera.position.clone(); nextZ.z += velocity.z * delta;
@@ -510,14 +1007,28 @@
             if (checkCollisions(nextY)) { 
                 if (velocity.y < 0) onGround = true; 
                 velocity.y = 0; 
-            } else { 
-                camera.position.y = nextY.y; 
-                onGround = false; 
-            }
-
+            } else { camera.position.y = nextY.y; onGround = false; }
             if (onGround && keys['Space']) { velocity.y = 13; onGround = false; }
-            if (camera.position.y < -50) camera.position.set(0, 10, 0); 
-        } else { 
+            if (camera.position.y < -30) {
+                if (!isFallingTimerActive) {
+                    isFallingTimerActive = true;
+                    fallingStartTime = Date.now();
+                    document.getElementById('respawn-timer').style.display = 'block';
+                }
+                const elapsed = (Date.now() - fallingStartTime) / 1000;
+                const remaining = Math.max(0, Math.ceil(5 - elapsed));
+                document.getElementById('respawn-timer').innerText = TRANSLATIONS[currentLang].respawning + remaining + "...";
+                if (elapsed >= 5) {
+                    camera.position.set(0, 10, 0);
+                    velocity.set(0, 0, 0);
+                    isFallingTimerActive = false;
+                    document.getElementById('respawn-timer').style.display = 'none';
+                }
+            } else {
+                isFallingTimerActive = false;
+                document.getElementById('respawn-timer').style.display = 'none';
+            }
+        } else if (!isGameStarted) {
             camera.rotation.y += 0.0015; 
         }
         renderer.render(scene, camera);
@@ -529,6 +1040,10 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
     
+    createMenuWorld();
+    updateSlotLabels();
+    changeLanguage('en');
+    setRandomSplash();
     window.onload = animate;
 </script>
 </body>
