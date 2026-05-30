@@ -40,6 +40,15 @@
             backdrop-filter: blur(15px);
         }
 
+        /* Darker changelog overlay to match settings */
+        #changelog-menu {
+            display: none;
+            z-index: 102;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
         #logo-container {
             position: relative;
             width: 80%;
@@ -81,7 +90,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            width: 320px;
+            width: 360px;
         }
 
         .btn-row {
@@ -123,18 +132,29 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            width: 320px;
+            width: 360px;
             color: white;
             margin-bottom: 20px;
         }
 
-        select, input[type="checkbox"] {
+        /* Darker create-world overlay to match settings/changelog */
+        #create-world-menu {
+            display: none;
+            z-index: 103;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        select, input[type="text"], input[type="checkbox"] {
             background: #222;
             color: white;
             border: 2px solid #666;
             padding: 5px 10px;
             font-size: 16px;
             cursor: pointer;
+            box-sizing: border-box;
+            max-width: 100%;
         }
         
         input[type="checkbox"] {
@@ -281,7 +301,7 @@
 <body>
 
 <div id="version-info">
-    Version 0.2<br>
+    Version 0.2.1<br>
     Created by Kris, Hosted on Jack.Fun
 </div>
 
@@ -296,6 +316,7 @@
     <div class="btn-container">
         <div class="menu-btn" id="btn-play" onclick="handlePlayClick()">Play</div>
         <div class="menu-btn" id="btn-settings-main" onclick="toggleSettings(true)">Settings</div>
+        <div class="menu-btn" id="btn-changelog-main" onclick="toggleChangelog(true)">Change Logs</div>
         <div class="menu-btn" id="btn-load-main" onclick="document.getElementById('fileInput').click()">Load World</div>
     </div>
 </div>
@@ -333,6 +354,44 @@
 
     <div class="btn-container">
         <div class="menu-btn" id="btn-back" onclick="toggleSettings(false)">Back</div>
+    </div>
+</div>
+
+<!-- Change Log Menu -->
+<div id="changelog-menu" class="menu-overlay" style="display:none;">
+    <h2 style="color:white; margin-bottom: 20px;">Change Logs</h2>
+    <div style="background: rgba(0,0,0,0.7); color: #fff; padding: 16px; border-radius:8px; max-width: 720px; text-align:left; line-height:1.4; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
+        <pre style="white-space:pre-wrap; font-family: inherit; font-size: 14px; margin:0;">
+-V0.2.1 - Fixed loading worlds, fixed inventory icon slots, added changelog menu, added world options.
+-V0.2 - Added new blocks, loading worlds, pause menu, main menu.
+-V0.1 - Original version released.
+        </pre>
+    </div>
+    <div class="btn-container" style="margin-top:20px;">
+        <div class="menu-btn" onclick="toggleChangelog(false)">Close</div>
+    </div>
+</div>
+
+<!-- Create World Menu -->
+<div id="create-world-menu" class="menu-overlay">
+    <h2 style="color:white; margin-bottom: 16px;">Create World</h2>
+    <div style="background: rgba(0,0,0,0.7); color: #fff; padding: 16px; border-radius:8px; max-width: 520px; text-align:left; line-height:1.4; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
+        <div style="margin-bottom:12px;">
+            <label for="world-name" style="display:block; font-weight:bold; margin-bottom:6px;">World Name</label>
+            <input id="world-name" type="text" value="A New World!" style="width:100%; padding:8px; font-size:16px; background:#222; color:#fff; border:2px solid #555;"/>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label for="terrain-select" style="display:block; font-weight:bold; margin-bottom:6px;">Terrain Generation</label>
+            <select id="terrain-select" style="width:100%; padding:8px; font-size:16px; background:#222; color:#fff; border:2px solid #555;">
+                <option value="normal">Normal</option>
+                <option value="treeless">Treeless</option>
+                <option value="flatworld">Flatworld</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+            <div class="menu-btn" onclick="toggleCreateWorldMenu(false)" style="padding:10px 14px; background:#444; border-color:#666;">Cancel</div>
+            <div class="menu-btn" onclick="createWorldFromMenu()" style="padding:10px 14px;">Create World</div>
+        </div>
     </div>
 </div>
 
@@ -395,10 +454,12 @@
             select: "[SCROLL] or [1-9] Select Block",
             esc: "[ESC] Pause/Menu",
             blocks: ["Grass", "Dirt", "Stone", "Wood", "Leaves", "Jack Block", "Reddit Revivers", "Silver Play Button", "Wee Wee TNT"],
-            version: "Version 0.2<br>Created by Kris, Hosted on Jack.Fun",
+            version: "Version 0.2.1<br>Created by Kris, Hosted on Jack.Fun",
             paused: "Game Paused",
             resume: "Back to Game",
             quit: "Main Menu",
+            changelog: "Change Logs",
+        changelogText: "-V0.2.1 - Fixed loading worlds, fixed inventory icon slots, added changelog menu, added world options.\n-V0.2 - Added new blocks, loading worlds, pause menu, main menu.\n-V0.1 - Original version released.",
             respawning: "Respawning in "
         },
         bg: {
@@ -416,10 +477,12 @@
             select: "[SCROLL] или [1-9] Избор на блок",
             esc: "[ESC] Пауза/Меню",
             blocks: ["Трева", "Пръст", "Камък", "Дърво", "Листа", "Джак Блок", "Reddit Revivers", "Сребърен Бутон", "Wee Wee TNT"],
-            version: "Версия 0.2<br>Създадено от Kris, Хоствано на Jack.Fun",
+            version: "Версия 0.2.1<br>Създадено от Kris, Хоствано на Jack.Fun",
             paused: "Играта е на пауза",
             resume: "Обратно в играта",
             quit: "Главно Меню",
+            changelog: "Списък на промените",
+        changelogText: "-V0.2.1 - Fixed loading worlds, fixed inventory icon slots, added changelog menu, added world options.\n-V0.2 - Added new blocks, loading worlds, pause menu, main menu.\n-V0.1 - Original version released.",
             respawning: "Прераждане след "
         }
     };
@@ -448,6 +511,11 @@
         document.getElementById('btn-settings-pause').innerText = t.settings;
         document.getElementById('btn-load-main').innerText = t.load;
         document.getElementById('btn-back').innerText = t.back;
+        document.getElementById('btn-changelog-main').innerText = t.changelog;
+        document.getElementById('btn-changelog-pause')?.setAttribute('onclick', "toggleChangelog(true)");
+        // set pause menu changelog label if exists
+        const changelogPauseBtn = document.getElementById('btn-changelog-pause');
+        if (changelogPauseBtn) changelogPauseBtn.innerText = t.changelog;
         
         document.getElementById('settings-title').innerText = t.settings;
         document.getElementById('label-language').innerText = t.language;
@@ -487,6 +555,27 @@
         }
     }
 
+    function toggleChangelog(show) {
+        const dlg = document.getElementById('changelog-menu');
+        dlg.style.display = show ? 'flex' : 'none';
+        if (show) {
+            // set translated changelog contents
+            const pre = dlg.querySelector('pre');
+            pre.innerText = TRANSLATIONS[currentLang].changelogText || TRANSLATIONS['en'].changelogText;
+            // hide other menus while changelog is open
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('pause-menu').style.display = 'none';
+            document.getElementById('settings-menu').style.display = 'none';
+        } else {
+            // return to appropriate menu
+            if (isGameStarted) {
+                document.getElementById('pause-menu').style.display = 'flex';
+            } else {
+                document.getElementById('menu').style.display = 'flex';
+            }
+        }
+    }
+
     function backToMainMenu() {
         isGameStarted = false;
         hasGeneratedPlayWorld = false; 
@@ -512,13 +601,13 @@
         return t;
     }
 
-    const jackTexture = loader.load('JackSucksAtLife.webp');
+    const jackTexture = loader.load('JackSucksAtLife.webp', updateSlotLabels);
     jackTexture.magFilter = THREE.NearestFilter;
-    const redditTexture = loader.load('reddit-revivers-logo.png');
+    const redditTexture = loader.load('reddit-revivers-logo.png', updateSlotLabels);
     redditTexture.magFilter = THREE.NearestFilter;
-    const silverPlayTexture = loader.load('youtube-5357882_1280.webp');
+    const silverPlayTexture = loader.load('youtube-5357882_1280.webp', updateSlotLabels);
     silverPlayTexture.magFilter = THREE.NearestFilter;
-    const wntTexture = loader.load('image_b6720e.png');
+    const wntTexture = loader.load('image_b6720e.png', updateSlotLabels);
     wntTexture.magFilter = THREE.NearestFilter;
 
     const MATERIALS = [
@@ -585,7 +674,7 @@
 
     function createMenuWorld() {
         clearWorld();
-        const menuSeed = 1000;
+        const menuSeed = 0;
         for (let x = -GRID_SIZE/2; x < GRID_SIZE/2; x++) {
             for (let z = -GRID_SIZE/2; z < GRID_SIZE/2; z++) {
                 const h = terrainHeight(x, z, menuSeed);
@@ -784,20 +873,41 @@
             if (!slot) continue;
             const mat = MATERIALS[i];
             
+            // Reset visual state
+            slot.style.backgroundImage = 'none';
+            slot.style.backgroundColor = '';
+            slot.innerText = '';
+
             if (mat.texture) {
-                if (mat.texture.image && mat.texture.image.src) {
-                    slot.style.backgroundImage = `url('${mat.texture.image.src}')`;
+                // Try multiple possible image src locations for robustness
+                let src = null;
+                try {
+                    const img = mat.texture.image;
+                    src = img && (img.currentSrc || img.src || img._currentSrc || img.srcset);
+                } catch (e) { src = null; }
+
+                if (src) {
+                    slot.style.backgroundImage = `url('${src}')`;
+                    slot.style.backgroundSize = 'contain';
+                    slot.style.backgroundRepeat = 'no-repeat';
+                    slot.style.backgroundPosition = 'center';
                 } else {
+                    // fallback color if texture not yet available
                     slot.style.backgroundColor = '#444';
+                    slot.innerText = (i+1).toString();
                 }
-                slot.innerText = '';
             } else {
-                slot.style.backgroundImage = 'none';
                 slot.style.backgroundColor = '#' + mat.color.toString(16).padStart(6, '0');
-                slot.innerText = i + 1;
+                slot.innerText = (i + 1).toString();
             }
+
+            // ensure pixelated look for block icons
+            slot.style.imageRendering = 'pixelated';
         }
     }
+
+    let currentWorldName = "A New World!";
+    let currentWorldMode = "normal";
 
     function saveWorld() {
         const worldData = blocks.map(b => ({
@@ -807,12 +917,15 @@
         const blob = new Blob([JSON.stringify(worldData)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = 'jackcraft_map.json'; a.click();
+        const safeName = (currentWorldName || "world").replace(/[^\w\-]/g, '_');
+        a.href = url; a.download = `${safeName}.json`; a.click();
         URL.revokeObjectURL(url);
     }
 
     function loadWorld(event) {
         const file = event.target.files[0];
+        // clear the input so subsequent loads with same file trigger change
+        event.target.value = '';
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -833,18 +946,89 @@
                     if(!blockGrid.has(key)) blockGrid.set(key, []);
                     blockGrid.get(key).push(cube);
                 });
+
+                // Mark that a play world is available
                 hasGeneratedPlayWorld = true;
-                startGame();
-            } catch (err) { console.error(err); }
+
+                // Always hide menu overlays so the loaded world is visible immediately.
+                // This closes either main menu or pause menu after loading (so loading from pause hides the pause menu).
+                document.getElementById('menu').style.display = 'none';
+                document.getElementById('pause-menu').style.display = 'none';
+                // Keep UI/crosshair/inventory hidden unless pointer lock is active (player is actually in-game)
+                document.getElementById('ui').style.display = document.pointerLockElement === renderer.domElement ? 'block' : 'none';
+                document.getElementById('crosshair').style.display = document.pointerLockElement === renderer.domElement ? 'block' : 'none';
+                document.getElementById('inventory').style.display = document.pointerLockElement === renderer.domElement ? 'flex' : 'none';
+
+                // Update visuals (slot icons, labels) now that textures/blocks are present
+                updateSlotLabels();
+            } catch (err) { console.error(err); alert('Failed to load world: ' + err.message); }
         };
         reader.readAsText(file);
     }
 
     function handlePlayClick() {
-        if (!hasGeneratedPlayWorld) {
-            createWorld(); 
+        // open create world modal instead of immediately starting
+        toggleCreateWorldMenu(true);
+    }
+
+    function toggleCreateWorldMenu(show) {
+        const el = document.getElementById('create-world-menu');
+        el.style.display = show ? 'flex' : 'none';
+        if (show) {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('pause-menu').style.display = 'none';
+            // initialize inputs
+            document.getElementById('world-name').value = currentWorldName || "A New World!";
+            document.getElementById('terrain-select').value = currentWorldMode || "normal";
+        } else {
+            // return to main or pause depending on state
+            if (isGameStarted) {
+                document.getElementById('pause-menu').style.display = 'flex';
+            } else {
+                document.getElementById('menu').style.display = 'flex';
+            }
         }
+    }
+
+    function createWorldFromMenu() {
+        const name = document.getElementById('world-name').value || "A New World!";
+        const mode = document.getElementById('terrain-select').value || "normal";
+        currentWorldName = name;
+        currentWorldMode = mode;
+        // actually create the world with selected options
+        createWorld(mode);
+        // mark as generated and start the game immediately
+        hasGeneratedPlayWorld = true;
+        toggleCreateWorldMenu(false);
         startGame();
+    }
+
+    // modify createWorld to accept mode
+    function createWorld(mode = "normal") {
+        clearWorld();
+        hasGeneratedPlayWorld = true;
+        const gameSeed = Math.random() * 10000;
+        for (let x = -GRID_SIZE/2; x < GRID_SIZE/2; x++) {
+            for (let z = -GRID_SIZE/2; z < GRID_SIZE/2; z++) {
+                if (mode === 'flatworld') {
+                    const h = 1;
+                    addBlock(x, h, z, 0);
+                    for (let y = h - 1; y > h - 4; y--) addBlock(x, y, z, 1);
+                    for (let y = h - 4; y > h - DEPTH; y--) addBlock(x, y, z, 2);
+                    continue;
+                }
+                const h = terrainHeight(x, z, gameSeed);
+                addBlock(x, h, z, 0);
+                for (let y = h - 1; y > h - 4; y--) addBlock(x, y, z, 1);
+                for (let y = h - 4; y > h - DEPTH; y--) addBlock(x, y, z, 2);
+
+                if (mode !== 'treeless' && Math.random() < 0.02 && Math.abs(x) > 2 && Math.abs(z) > 2) {
+                    createTree(x, h + 1, z);
+                }
+            }
+        }
+        camera.position.set(0, 10, 0);
+        velocity.set(0, 0, 0);
     }
 
     function startGame() {
@@ -1041,9 +1225,11 @@
     createMenuWorld();
     updateSlotLabels();
     changeLanguage('en');
+    // ensure changelog buttons use translations if needed later
+    // initialize changelog to hidden
+    document.getElementById('changelog-menu').style.display = 'none';
     setRandomSplash();
     window.onload = animate;
 </script>
 </body>
 </html>
-
