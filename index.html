@@ -739,6 +739,24 @@
             if (existing && existing.some(b => !b.userData.isSlab)) return;
         }
 
+        // Prevent placing a block where the player capsule intersects it
+        // compute intended block center and approximate extents
+        const intendedPos = new THREE.Vector3(gx + 0.5, gy + 0.5, gz + 0.5);
+        const blockHalfX = 0.5;
+        const blockHalfZ = config.type === 'vertical-slab' ? 0.05 : 0.5;
+        const blockHalfY = 0.5;
+        const p = camera.position.clone();
+        // player vertical span (feet at camera.y - 1.6 to camera.y)
+        const playerFeetY = p.y - 1.6;
+        const playerHeadY = p.y;
+        // check overlap in y
+        const overlapY = !(playerHeadY < intendedPos.y - blockHalfY || playerFeetY > intendedPos.y + blockHalfY);
+        const overlapX = Math.abs(p.x - intendedPos.x) < (PLAYER_RADIUS + blockHalfX);
+        const overlapZ = Math.abs(p.z - intendedPos.z) < (PLAYER_RADIUS + blockHalfZ);
+        if (overlapY && overlapX && overlapZ) {
+            return; // abort placement to avoid trapping player
+        }
+
         let material;
         if (config.texture) {
             material = new THREE.MeshLambertMaterial({ map: config.texture });
@@ -950,14 +968,26 @@
                 // Mark that a play world is available
                 hasGeneratedPlayWorld = true;
 
-                // Always hide menu overlays so the loaded world is visible immediately.
-                // This closes either main menu or pause menu after loading (so loading from pause hides the pause menu).
+                // Hide menus and enter game state so the loaded world is immediately playable
                 document.getElementById('menu').style.display = 'none';
                 document.getElementById('pause-menu').style.display = 'none';
-                // Keep UI/crosshair/inventory hidden unless pointer lock is active (player is actually in-game)
-                document.getElementById('ui').style.display = document.pointerLockElement === renderer.domElement ? 'block' : 'none';
-                document.getElementById('crosshair').style.display = document.pointerLockElement === renderer.domElement ? 'block' : 'none';
-                document.getElementById('inventory').style.display = document.pointerLockElement === renderer.domElement ? 'flex' : 'none';
+                isGameStarted = true;
+
+                // try to request pointer lock (this load event is triggered by a user gesture so it should succeed)
+                safeRequestPointerLock();
+
+                // ensure UI shows (pointerlockchange handler will keep these consistent), but make visible now
+                document.getElementById('ui').style.display = 'block';
+                document.getElementById('crosshair').style.display = 'block';
+                document.getElementById('inventory').style.display = 'flex';
+
+                // make sure camera isn't stuck inside blocks: move player up until no collision (safety cap)
+                camera.position.y = Math.max(camera.position.y, 10);
+                let safety = 0;
+                while (checkCollisions(camera.position) && safety < 20) {
+                    camera.position.y += 1;
+                    safety++;
+                }
 
                 // Update visuals (slot icons, labels) now that textures/blocks are present
                 updateSlotLabels();
@@ -1031,9 +1061,42 @@
         velocity.set(0, 0, 0);
     }
 
+    // Safe pointer lock requester: retries briefly if lock cannot be acquired immediately
+    function safeRequestPointerLock(retries = 6, delay = 150) {
+        // do not attempt if already locked
+        if (document.pointerLockElement === renderer.domElement) return;
+        // avoid spamming right after unlock
+        if (lockCooldown) {
+            // schedule a final attempt after cooldown (safely catching possible promise rejections)
+            setTimeout(() => {
+                if (document.pointerLockElement !== renderer.domElement) {
+                    try {
+                        const p = renderer.domElement.requestPointerLock?.();
+                        if (p && typeof p.then === 'function') p.catch(() => {});
+                    } catch (e) {}
+                }
+            }, delay);
+            return;
+        }
+        let attempts = 0;
+        const tryLock = () => {
+            try {
+                const p = renderer.domElement.requestPointerLock?.();
+                if (p && typeof p.then === 'function') p.catch(() => {});
+            } catch (err) {
+                // some browsers may throw synchronously; ignore and schedule retry
+            }
+            attempts++;
+            if (document.pointerLockElement !== renderer.domElement && attempts < retries) {
+                setTimeout(tryLock, delay);
+            }
+        };
+        tryLock();
+    }
+
     function startGame() {
         if (lockCooldown) return;
-        renderer.domElement.requestPointerLock();
+        safeRequestPointerLock();
     }
 
     document.addEventListener('pointerlockchange', () => {
